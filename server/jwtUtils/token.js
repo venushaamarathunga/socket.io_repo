@@ -1,13 +1,17 @@
 import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+// import dotenv from "dotenv";
 
-const genarateToken = (payload) => {
+// dotenv.config();
+
+const generateToken = (payload) => {
   return jwt.sign({ payload }, process.env.JWT_SECRET_KEY, {
-    algorithm: "RS256",
+    algorithm: "HS256",
     expiresIn: 60 * 60,
   });
 };
 
-const validateToken = (req, res) => {
+const validateToken = async (req, res, next) => {
   let tokenHeaderKey = process.env.TOKEN_HEADER_KEY || "Authorization";
   let jwtSecretKey = process.env.JWT_SECRET_KEY;
 
@@ -16,17 +20,23 @@ const validateToken = (req, res) => {
   if (!token) return res.status(401).json({ message: "Access Denied" });
   try {
     // Ensure the token follows "Bearer <TOKEN>" format
-    const tokenValue = token.startsWith("Bearer ")
-      ? token.split(" ")[1]
-      : token;
+    const tokenValue = token.startsWith("Bearer ") ? token.split(" ")[1] : token;
 
-    const verified = jwt.verify(tokenValue, jwtSecretKey);
-    req.user = verified; // Attach user data to req object
+    const decoded = jwt.verify(tokenValue, jwtSecretKey);
 
-    return res.send("Successfully Verified");
+    const user = await User.findById(decoded.payload.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    req.user = user;
+    req.userData = decoded;
+
+    next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid Token", error });
   }
 };
 
-export { genarateToken, validateToken };
+export { generateToken, verify };

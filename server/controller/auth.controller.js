@@ -1,6 +1,6 @@
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import { genarateToken } from "../jwtUtils/token.js";
+import { generateToken } from "../jwtUtils/token.js";
 
 export const signUp = async (req, res) => {
   try {
@@ -58,10 +58,7 @@ export const logIn = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      user?.password || ""
-    );
+    const isPasswordCorrect = await bcrypt.compare(password, user?.password || "");
 
     if (!user || !isPasswordCorrect) {
       return res.status(401).json({ error: "Invalid email or password" });
@@ -90,9 +87,7 @@ export const logIn = async (req, res) => {
 
 export const logOut = (req, res) => {
   try {
-    res
-      .status(200)
-      .json({ success: true, message: "Logged out successfully." });
+    res.status(200).json({ success: true, message: "Logged out successfully." });
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
